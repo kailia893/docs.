@@ -491,7 +491,7 @@
     }
 
     function generateBoard() {
-      size = clamp(parseInt(gridSizeInput.value, 10) || 10, 5, 50);
+      size = clamp(parseInt(gridSizeInput.value, 10) || 10, 5, 35);
       gridSizeInput.value = size;
       grid = createEmptyGrid(size);
       opened = createBoolGrid(size);
@@ -501,6 +501,11 @@
       buildBoard();
       revealInitialFlower();
       gameOver = false;
+      
+      // Hide controls and show only status
+      const controlsEl = document.querySelector('.controls');
+      controlsEl.style.display = 'none';
+      
       statusText.textContent = 'Board ready. Left click to open and right click to mark.';
       showNotice('A flower-shaped start area is unlocked in the middle.');
     }
@@ -519,7 +524,6 @@
       if (event.key === 'Alt') {
         paused = false;
         gameArea.classList.remove('paused');
-        statusText.textContent = 'Game resumed.';
       }
     });
 
@@ -535,7 +539,6 @@
       if (paused) {
         paused = false;
         gameArea.classList.remove('paused');
-        statusText.textContent = 'Game resumed.';
       }
     });
 
