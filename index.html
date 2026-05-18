@@ -204,6 +204,17 @@
       color: #000;
     }
 
+    .bottom-info {
+      margin-top: 8px;
+      font-size: 14px;
+      color: #000;
+    }
+
+    .bottom-info #timerText,
+    .bottom-info #mistakesText {
+      color: #000;
+    }
+
     @media (max-width: 860px) {
       .layout {
         grid-template-columns: 1fr;
@@ -228,14 +239,16 @@
       <div class="pause-overlay"></div>
       <div class="controls">
         <label for="gridSize">Grid size:</label>
-        <input id="gridSize" type="number" min="5" value="10" aria-label="Grid size">
+        <input id="gridSize" type="number" min="5" value="11" step="2" aria-label="Grid size">
         <button id="generateBtn" type="button">Generate Board</button>
           <span class="status" id="statusText">Enter a size and generate a board.</span>
-          <span class="status" id="timerText">Time: 0:00</span>
-          <span class="status" id="mistakesText">Mistakes: 0</span>
       </div>
       <div class="board" id="board"></div>
       <div class="notice" id="notice"></div>
+      <div class="bottom-info" id="bottomInfo">
+        <span id="timerText">Time: 0:00</span>
+        <span id="mistakesText" style="margin-left:12px">Mistakes: 0</span>
+      </div>
     </section>
 
     <aside class="side-image">
@@ -553,7 +566,14 @@
     }
 
     function generateBoard() {
-      size = clamp(parseInt(gridSizeInput.value, 10) || 10, 5, 33);
+      // parse requested size and clamp
+      let requested = parseInt(gridSizeInput.value, 10) || 11;
+      requested = clamp(requested, 5, 50);
+      // enforce odd sizes only
+      if (requested % 2 === 0) {
+        if (requested + 1 <= 50) requested += 1; else requested -= 1;
+      }
+      size = requested;
       gridSizeInput.value = size;
       grid = createEmptyGrid(size);
       opened = createBoolGrid(size);
