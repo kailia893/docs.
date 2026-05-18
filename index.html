@@ -66,7 +66,9 @@
       padding: 20px;
       box-shadow: none;
       position: relative;
-      min-height: 420px;
+      display: flex;
+      flex-direction: column;
+      height: 100%;
     }
 
     .center.paused {
@@ -139,9 +141,11 @@
       display: grid;
       gap: 0;
       background: transparent;
-      overflow: auto;
-      max-width: 100%;
-      width: fit-content;
+      overflow: hidden;
+      flex: 1;
+      width: 100%;
+      height: 100%;
+      place-items: center;
     }
 
     .cell {
@@ -289,22 +293,21 @@
 
     function buildBoard() {
       boardEl.innerHTML = '';
-      // Calculate cell size to fit up to 50x50 grids in available viewport
-      const windowHeight = window.innerHeight;
-      const windowWidth = window.innerWidth;
+      // Get the actual available space in the center section
+      const centerEl = document.getElementById('gameArea');
+      const controlsEl = document.querySelector('.controls');
+      const noticeEl = document.querySelector('.notice');
       
-      // Estimate space used by other elements
-      const estimatedHeaderHeight = 150; // banner height estimate
-      const estimatedControlsHeight = 50; // controls section
-      const estimatedNoticeHeight = 30; // notice area
-      const estimatedPaddingVertical = 100; // top/bottom padding and margins
-      const estimatedSideWidth = 320; // left and right side images with gaps
-      const estimatedPaddingHorizontal = 60; // left/right padding
+      // Calculate available space for the board
+      const centerHeight = centerEl.clientHeight;
+      const controlsHeight = controlsEl ? controlsEl.offsetHeight : 50;
+      const noticeHeight = noticeEl ? noticeEl.offsetHeight : 30;
+      const centerPadding = 40; // top and bottom padding
       
-      const availableHeight = windowHeight - estimatedHeaderHeight - estimatedControlsHeight - estimatedNoticeHeight - estimatedPaddingVertical;
-      const availableWidth = windowWidth - estimatedSideWidth - estimatedPaddingHorizontal;
+      const availableHeight = centerHeight - controlsHeight - noticeHeight - centerPadding;
+      const availableWidth = centerEl.clientWidth - 40; // left and right padding
       
-      // Calculate cell size based on available space, with minimum 8px
+      // Calculate cell size based on available space
       const maxCellHeight = Math.max(8, Math.floor(availableHeight / size));
       const maxCellWidth = Math.max(8, Math.floor(availableWidth / size));
       const cellSize = Math.min(maxCellHeight, maxCellWidth);
@@ -488,7 +491,7 @@
     }
 
     function generateBoard() {
-      size = clamp(parseInt(gridSizeInput.value, 10) || 10, 5, 25);
+      size = clamp(parseInt(gridSizeInput.value, 10) || 10, 5, 50);
       gridSizeInput.value = size;
       grid = createEmptyGrid(size);
       opened = createBoolGrid(size);
