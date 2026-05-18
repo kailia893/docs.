@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Minesweeper Flower</title>
+  <style>
+    html, body {
+      margin: 0;
+      min-height: 100%;
+      font-family: Arial, sans-serif;
+      background: #eef4f9;
+      color: #111;
+    }
+
+    body {
+      display: grid;
+      grid-template-rows: auto 1fr;
+      min-height: 100vh;
+    }
+
+    .banner {
+      width: 100%;
+      background: #fff;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 4px 0;
+      box-shadow: inset 0 -1px 0 rgba(0,0,0,.08);
+    }
+
+    .banner img {
+      width: 100%;
+      max-height: 72px;
+      object-fit: cover;
+      display: block;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 200px minmax(320px, 1fr) 200px;
+      gap: 16px;
+      padding: 16px;
+      box-sizing: border-box;
+      align-items: start;
+    }
+
+    .side-image {
+      width: 100%;
+      background: #fff;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 2px 10px rgba(0,0,0,.08);
+    }
+
+    .side-image img {
+      width: 100%;
+      display: block;
+      object-fit: cover;
+    }
+
+    .center {
+      background: #fff;
+      border-radius: 16px;
+      padding: 20px;
+      box-shadow: 0 10px 30px rgba(0,0,0,.08);
+      position: relative;
+      min-height: 420px;
+    }
+
+    .center.paused {
+      background: #fff;
+      color: transparent;
+    }
+
+    .center.paused * {
+      color: transparent !important;
+    }
+
+    .pause-overlay {
+      position: absolute;
+      inset: 0;
+      background: #fff;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity .2s ease;
+    }
+
+    .center.paused .pause-overlay {
+      opacity: 1;
+    }
+
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 16px;
+      align-items: center;
+    }
+
+    .controls label,
+    .controls button,
+    .controls input,
+    .status {
+      font-family: Arial, sans-serif;
+      font-size: 15px;
+    }
+
+    .controls input {
+      width: 78px;
+      padding: 8px 10px;
+      border: 1px solid #cbd6e1;
+      border-radius: 8px;
+      font-size: 15px;
+    }
+
+    .controls button {
+      border: 1px solid #7190c8;
+      background: #4f7bcc;
+      color: #fff;
+      cursor: pointer;
+      padding: 10px 14px;
+      border-radius: 10px;
+      transition: background .2s ease;
+    }
+
+    .controls button:hover {
+      background: #3a66b2;
+    }
+
+    .status {
+      color: #333;
+      min-width: 220px;
+    }
+
+    .board {
+      display: grid;
+      gap: 1px;
+      background: #cbd6e1;
+      border-radius: 12px;
+      overflow: hidden;
+      max-width: 100%;
+    }
+
+    .cell {
+      width: 36px;
+      height: 36px;
+      display: grid;
+      place-items: center;
+      font-size: 14px;
+      border: none;
+      padding: 0;
+      cursor: pointer;
+      user-select: none;
+      background: #fff;
+      color: #111;
+    }
+
+    .cell:nth-child(odd) {
+      background: #f8fafd;
+    }
+
+    .cell.open {
+      background: #f1f8ff;
+      cursor: default;
+      color: #111;
+      font-weight: 600;
+    }
+
+    .cell.open.mine {
+      background: #ffcfcf;
+      color: #a00;
+    }
+
+    .cell.flagged {
+      background: #f0f6ff;
+      color: #e43;
+    }
+
+    .cell.disabled {
+      cursor: not-allowed;
+      opacity: .72;
+    }
+
+    .cell span {
+      pointer-events: none;
+    }
+
+    .notice {
+      margin-top: 12px;
+      font-size: 14px;
+      min-height: 20px;
+      color: #3c4e6f;
+    }
+
+    @media (max-width: 860px) {
+      .layout {
+        grid-template-columns: 1fr;
+      }
+      .side-image {
+        max-width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="banner">
+    <img src="banner.png" alt="Top banner">
+  </div>
+
+  <main class="layout">
+    <aside class="side-image">
+      <img src="left.png" alt="Left image">
+    </aside>
+
+    <section class="center" id="gameArea">
+      <div class="pause-overlay"></div>
+      <div class="controls">
+        <label for="gridSize">Grid size:</label>
+        <input id="gridSize" type="number" min="5" value="10" aria-label="Grid size">
+        <button id="generateBtn" type="button">Generate Board</button>
+        <span class="status" id="statusText">Enter a size and generate a board.</span>
+      </div>
+      <div class="board" id="board"></div>
+      <div class="notice" id="notice"></div>
+    </section>
+
+    <aside class="side-image">
+      <img src="right.png" alt="Right image">
+    </aside>
+  </main>
+
+  <script>
+    const boardEl = document.getElementById('board');
+    const statusText = document.getElementById('statusText');
+    const noticeEl = document.getElementById('notice');
+    const generateBtn = document.getElementById('generateBtn');
+    const gridSizeInput = document.getElementById('gridSize');
+    const gameArea = document.getElementById('gameArea');
+
+    let grid = [];
+    let opened = [];
+    let flagged = [];
+    let size = 10;
+    let mineCount = 0;
+    let paused = false;
+    let gameOver = false;
+
+    function clamp(value, min, max) {
+      return Math.max(min, Math.min(max, value));
+    }
+
+    function showNotice(message, error = false) {
+      noticeEl.textContent = message;
+      noticeEl.style.color = error ? '#a00' : '#3c4e6f';
+      if (!error) {
+        window.clearTimeout(showNotice.timeout);
+        showNotice.timeout = window.setTimeout(() => noticeEl.textContent = '', 4500);
+      }
+    }
+
+    function createEmptyGrid(size) {
+      return Array.from({ length: size }, () => Array.from({ length: size }, () => ({ mine: false, count: 0 })));
+    }
+
+    function createBoolGrid(size) {
+      return Array.from({ length: size }, () => Array.from({ length: size }, () => false));
+    }
+
+    function getCenterFlowerZone(size) {
+      const center = Math.floor(size / 2);
+      const zone = new Set();
+      for (let dr = -2; dr <= 2; dr++) {
+        for (let dc = -2; dc <= 2; dc++) {
+          if (Math.abs(dr) + Math.abs(dc) <= 3) {
+            const r = center + dr;
+            const c = center + dc;
+            if (r >= 0 && r < size && c >= 0 && c < size) {
+              zone.add(`${r},${c}`);
+            }
+          }
+        }
+      }
+      return zone;
+    }
+
+    function buildBoard() {
+      boardEl.innerHTML = '';
+      boardEl.style.gridTemplateColumns = `repeat(${size}, 36px)`;
+      boardEl.style.gridTemplateRows = `repeat(${size}, 36px)`;
+      for (let r = 0; r < size; r++) {
+        for (let c = 0; c < size; c++) {
+          const button = document.createElement('button');
+          button.type = 'button';
+          button.className = 'cell';
+          button.dataset.row = r;
+          button.dataset.col = c;
+          button.innerHTML = '<span></span>';
+          button.addEventListener('click', (e) => handleClick(e, r, c));
+          button.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+            handleRightClick(e, r, c);
+          });
+          boardEl.appendChild(button);
+        }
+      }
+    }
+
+    function computeNeighborCounts() {
+      for (let r = 0; r < size; r++) {
+        for (let c = 0; c < size; c++) {
+          if (grid[r][c].mine) continue;
+          let count = 0;
+          for (let dr = -1; dr <= 1; dr++) {
+            for (let dc = -1; dc <= 1; dc++) {
+              if (dr === 0 && dc === 0) continue;
+              const nr = r + dr;
+              const nc = c + dc;
+              if (nr >= 0 && nr < size && nc >= 0 && nc < size && grid[nr][nc].mine) {
+                count += 1;
+              }
+            }
+          }
+          grid[r][c].count = count;
+        }
+      }
+    }
+
+    function placeMines() {
+      const safeZone = getCenterFlowerZone(size);
+      const allCells = [];
+      for (let r = 0; r < size; r++) {
+        for (let c = 0; c < size; c++) {
+          if (!safeZone.has(`${r},${c}`)) {
+            allCells.push([r, c]);
+          }
+        }
+      }
+      const minesToPlace = Math.max(1, Math.floor((size * size) / 6));
+      mineCount = minesToPlace;
+      for (let i = 0; i < minesToPlace && allCells.length; i++) {
+        const index = Math.floor(Math.random() * allCells.length);
+        const [r, c] = allCells.splice(index, 1)[0];
+        grid[r][c].mine = true;
+      }
+    }
+
+    function revealInitialFlower() {
+      const safeZone = getCenterFlowerZone(size);
+      for (const key of safeZone) {
+        const [r, c] = key.split(',').map(Number);
+        opened[r][c] = true;
+      }
+      updateBoard();
+    }
+
+    function updateBoard() {
+      for (const cell of boardEl.children) {
+        const r = Number(cell.dataset.row);
+        const c = Number(cell.dataset.col);
+        cell.classList.toggle('open', opened[r][c]);
+        cell.classList.toggle('flagged', flagged[r][c]);
+        const span = cell.querySelector('span');
+        if (opened[r][c]) {
+          cell.disabled = false;
+          cell.classList.remove('disabled');
+          flagged[r][c] = false;
+          const item = grid[r][c];
+          if (item.mine) {
+            cell.classList.add('mine');
+            span.textContent = '💣';
+          } else {
+            cell.classList.remove('mine');
+            span.textContent = item.count > 0 ? item.count : '';
+          }
+        } else if (flagged[r][c]) {
+          span.textContent = '🚩';
+          cell.classList.remove('mine');
+          cell.classList.remove('disabled');
+          cell.disabled = false;
+        } else {
+          span.textContent = '';
+          cell.classList.remove('mine');
+          cell.classList.remove('disabled');
+          cell.disabled = false;
+        }
+      }
+    }
+
+    function revealCell(r, c, triggeredByUser = false) {
+      if (gameOver || paused) return false;
+      if (r < 0 || r >= size || c < 0 || c >= size) return false;
+      if (opened[r][c] || flagged[r][c]) {
+        if (triggeredByUser) {
+          showNotice('You clicked wrong, undoing your latest attempt', true);
+        }
+        return false;
+      }
+      if (grid[r][c].mine) {
+        if (triggeredByUser) {
+          showNotice('You clicked wrong, undoing your latest attempt', true);
+        }
+        return false;
+      }
+      opened[r][c] = true;
+      if (grid[r][c].count === 0) {
+        for (let dr = -1; dr <= 1; dr++) {
+          for (let dc = -1; dc <= 1; dc++) {
+            if (dr === 0 && dc === 0) continue;
+            const nr = r + dr;
+            const nc = c + dc;
+            if (nr >= 0 && nr < size && nc >= 0 && nc < size && !opened[nr][nc]) {
+              revealCell(nr, nc, false);
+            }
+          }
+        }
+      }
+      return true;
+    }
+
+    function handleClick(event, r, c) {
+      if (gameOver || paused) return;
+      if (opened[r][c]) {
+        showNotice('You clicked wrong, undoing your latest attempt', true);
+        return;
+      }
+      if (flagged[r][c]) {
+        showNotice('You clicked wrong, undoing your latest attempt', true);
+        return;
+      }
+      const valid = revealCell(r, c, true);
+      if (!valid) {
+        updateBoard();
+        return;
+      }
+      updateBoard();
+      checkWin();
+    }
+
+    function handleRightClick(event, r, c) {
+      if (gameOver || paused) return;
+      if (opened[r][c]) {
+        showNotice('You clicked wrong, undoing your latest attempt', true);
+        return;
+      }
+      flagged[r][c] = !flagged[r][c];
+      updateBoard();
+      checkWin();
+    }
+
+    function checkWin() {
+      let unopenedCount = 0;
+      let correctFlags = 0;
+      for (let r = 0; r < size; r++) {
+        for (let c = 0; c < size; c++) {
+          if (!opened[r][c]) unopenedCount += 1;
+          if (flagged[r][c] && grid[r][c].mine) correctFlags += 1;
+        }
+      }
+      if (unopenedCount === mineCount || (opened.flat().every(Boolean) && unopenedCount === 0)) {
+        gameOver = true;
+        statusText.textContent = 'You won! The board is filled flawlessly.';
+        showNotice('Congratulations, you have won!', false);
+      }
+    }
+
+    function generateBoard() {
+      size = clamp(parseInt(gridSizeInput.value, 10) || 10, 5, 25);
+      gridSizeInput.value = size;
+      grid = createEmptyGrid(size);
+      opened = createBoolGrid(size);
+      flagged = createBoolGrid(size);
+      placeMines();
+      computeNeighborCounts();
+      buildBoard();
+      revealInitialFlower();
+      gameOver = false;
+      statusText.textContent = 'Board ready. Left click to open and right click to mark.';
+      showNotice('A flower-shaped start area is unlocked in the middle.');
+    }
+
+    generateBtn.addEventListener('click', generateBoard);
+
+    window.addEventListener('keydown', (event) => {
+      if (event.key === 'Alt') {
+        paused = true;
+        gameArea.classList.add('paused');
+        statusText.textContent = 'Game paused. Release Alt to continue.';
+      }
+    });
+
+    window.addEventListener('keyup', (event) => {
+      if (event.key === 'Alt') {
+        paused = false;
+        gameArea.classList.remove('paused');
+        statusText.textContent = 'Game resumed.';
+      }
+    });
+
+    window.addEventListener('blur', () => {
+      if (!paused) {
+        paused = true;
+        gameArea.classList.add('paused');
+        statusText.textContent = 'Game paused.';
+      }
+    });
+
+    window.addEventListener('focus', () => {
+      if (paused) {
+        paused = false;
+        gameArea.classList.remove('paused');
+        statusText.textContent = 'Game resumed.';
+      }
+    });
+
+    generateBoard();
+  </script>
+</body>
+</html>
