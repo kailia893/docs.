@@ -174,6 +174,10 @@
       font-weight: 600;
     }
 
+    .cell.open span {
+      color: #888;
+    }
+
     .cell.open.mine {
       background: #f1f8ff;
       color: #000;
@@ -502,9 +506,12 @@
       revealInitialFlower();
       gameOver = false;
       
-      // Hide controls and show only status
       const controlsEl = document.querySelector('.controls');
-      controlsEl.style.display = 'none';
+      controlsEl.style.display = 'flex';
+      window.clearTimeout(generateBoard.hideTimeout);
+      generateBoard.hideTimeout = window.setTimeout(() => {
+        controlsEl.style.display = 'none';
+      }, 4000);
       
       statusText.textContent = 'Board ready. Left click to open and right click to mark.';
       showNotice('A flower-shaped start area is unlocked in the middle.');
