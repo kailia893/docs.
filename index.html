@@ -139,10 +139,9 @@
       display: grid;
       gap: 0;
       background: transparent;
-      overflow: hidden;
+      overflow: auto;
       max-width: 100%;
       width: fit-content;
-      max-height: 420px;
     }
 
     .cell {
@@ -290,9 +289,26 @@
 
     function buildBoard() {
       boardEl.innerHTML = '';
-      // Calculate responsive cell size based on grid size
-      const maxBoardSize = 420; // max-height of board
-      const cellSize = Math.max(24, Math.floor(maxBoardSize / size) - 1);
+      // Calculate cell size to fit up to 50x50 grids in available viewport
+      const windowHeight = window.innerHeight;
+      const windowWidth = window.innerWidth;
+      
+      // Estimate space used by other elements
+      const estimatedHeaderHeight = 150; // banner height estimate
+      const estimatedControlsHeight = 50; // controls section
+      const estimatedNoticeHeight = 30; // notice area
+      const estimatedPaddingVertical = 100; // top/bottom padding and margins
+      const estimatedSideWidth = 320; // left and right side images with gaps
+      const estimatedPaddingHorizontal = 60; // left/right padding
+      
+      const availableHeight = windowHeight - estimatedHeaderHeight - estimatedControlsHeight - estimatedNoticeHeight - estimatedPaddingVertical;
+      const availableWidth = windowWidth - estimatedSideWidth - estimatedPaddingHorizontal;
+      
+      // Calculate cell size based on available space, with minimum 8px
+      const maxCellHeight = Math.max(8, Math.floor(availableHeight / size));
+      const maxCellWidth = Math.max(8, Math.floor(availableWidth / size));
+      const cellSize = Math.min(maxCellHeight, maxCellWidth);
+      
       boardEl.style.gridTemplateColumns = `repeat(${size}, ${cellSize}px)`;
       boardEl.style.gridTemplateRows = `repeat(${size}, ${cellSize}px)`;
       for (let r = 0; r < size; r++) {
