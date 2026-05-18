@@ -230,7 +230,9 @@
         <label for="gridSize">Grid size:</label>
         <input id="gridSize" type="number" min="5" value="10" aria-label="Grid size">
         <button id="generateBtn" type="button">Generate Board</button>
-        <span class="status" id="statusText">Enter a size and generate a board.</span>
+          <span class="status" id="statusText">Enter a size and generate a board.</span>
+          <span class="status" id="timerText">Time: 0:00</span>
+          <span class="status" id="mistakesText">Mistakes: 0</span>
       </div>
       <div class="board" id="board"></div>
       <div class="notice" id="notice"></div>
@@ -256,6 +258,56 @@
     let mineCount = 0;
     let paused = false;
     let gameOver = false;
+    // Timer and mistakes
+    const timerText = document.getElementById('timerText');
+    const mistakesText = document.getElementById('mistakesText');
+    let timerInterval = null;
+    let elapsedSeconds = 0;
+    let mistakes = 0;
+
+    function formatTime(s) {
+      const m = Math.floor(s / 60);
+      const sec = s % 60;
+      return `${m}:${sec.toString().padStart(2, '0')}`;
+    }
+
+    function updateTimer() {
+      if (timerText) timerText.textContent = 'Time: ' + formatTime(elapsedSeconds);
+    }
+
+    function updateMistakes() {
+      if (mistakesText) mistakesText.textContent = 'Mistakes: ' + mistakes;
+    }
+
+    function startTimer() {
+      stopTimer();
+      timerInterval = setInterval(() => {
+        if (!paused && !gameOver) {
+          elapsedSeconds++;
+          updateTimer();
+        }
+      }, 1000);
+      updateTimer();
+    }
+
+    function stopTimer() {
+      if (timerInterval) {
+        clearInterval(timerInterval);
+        timerInterval = null;
+      }
+    }
+
+    function resetTimerAndMistakes() {
+      elapsedSeconds = 0;
+      mistakes = 0;
+      updateTimer();
+      updateMistakes();
+    }
+
+    function recordMistake() {
+      mistakes += 1;
+      updateMistakes();
+    }
 
     function clamp(value, min, max) {
       return Math.max(min, Math.min(max, value));
@@ -422,12 +474,14 @@
       if (r < 0 || r >= size || c < 0 || c >= size) return false;
       if (opened[r][c] || flagged[r][c]) {
         if (triggeredByUser) {
+          recordMistake();
           showNotice('You clicked wrong, undoing your latest attempt', true);
         }
         return false;
       }
       if (grid[r][c].mine) {
         if (triggeredByUser) {
+          recordMistake();
           showNotice('You clicked wrong, undoing your latest attempt', true);
         }
         return false;
@@ -451,10 +505,12 @@
     function handleClick(event, r, c) {
       if (gameOver || paused) return;
       if (opened[r][c]) {
+        recordMistake();
         showNotice('You clicked wrong, undoing your latest attempt', true);
         return;
       }
       if (flagged[r][c]) {
+        recordMistake();
         showNotice('You clicked wrong, undoing your latest attempt', true);
         return;
       }
@@ -470,6 +526,7 @@
     function handleRightClick(event, r, c) {
       if (gameOver || paused) return;
       if (opened[r][c]) {
+        recordMistake();
         showNotice('You clicked wrong, undoing your latest attempt', true);
         return;
       }
@@ -490,6 +547,7 @@
       if (unopenedCount === mineCount || (opened.flat().every(Boolean) && unopenedCount === 0)) {
         gameOver = true;
         statusText.textContent = 'You won! The board is filled flawlessly.';
+        stopTimer();
         showNotice('Congratulations, you have won!', false);
       }
     }
@@ -505,6 +563,8 @@
       buildBoard();
       revealInitialFlower();
       gameOver = false;
+      resetTimerAndMistakes();
+      startTimer();
       
       const controlsEl = document.querySelector('.controls');
       controlsEl.style.display = 'flex';
