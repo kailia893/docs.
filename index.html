@@ -404,7 +404,7 @@
             span.textContent = item.count > 0 ? item.count : '';
           }
         } else if (flagged[r][c]) {
-          span.textContent = '🚩';
+          span.textContent = '?';
           cell.classList.remove('mine');
           cell.classList.remove('disabled');
           cell.disabled = false;
@@ -495,7 +495,7 @@
     }
 
     function generateBoard() {
-      size = clamp(parseInt(gridSizeInput.value, 10) || 10, 5, 35);
+      size = clamp(parseInt(gridSizeInput.value, 10) || 10, 5, 33);
       gridSizeInput.value = size;
       grid = createEmptyGrid(size);
       opened = createBoolGrid(size);
