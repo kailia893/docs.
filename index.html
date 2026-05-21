@@ -5,226 +5,204 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Notes</title>
   <style>
-    html, body {
-      margin: 0;
-      min-height: 100%;
-      font-family: Arial, sans-serif;
-      background: #fff;
-      color: #000;
-    }
+  html, body {
+    margin: 0;
+    padding: 0;
+    font-family: Arial, sans-serif;
+    background: #fff;
+    color: #000;
+  }
 
-    body {
-      display: grid;
-      grid-template-rows: auto 1fr;
-      min-height: 100vh;
-    }
+  body {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+  }
 
-    .banner {
-      width: 100%;
-      background: #fff;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      padding: 0;
-      box-shadow: none;
-    }
+  /* =========================
+     BANNER (NO CROPPING)
+  ========================== */
+  .banner {
+    width: 100%;
+    display: block;
+  }
 
-    .banner img {
-      width: 100%;
-      height: auto;
-      display: block;
-      object-fit: contain;
-    }
+  .banner img {
+    width: 100%;
+    height: auto;
+    display: block;
+    object-fit: contain;
+  }
 
+  /* =========================
+     MAIN LAYOUT
+  ========================== */
+  .layout {
+    flex: 1;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  /* =========================
+     SIDE IMAGES (NO CROPPING, NO FORCED RESIZE)
+  ========================== */
+  .side-image {
+    flex: 0 0 auto;
+    display: block;
+  }
+
+  .side-image img {
+    display: block;
+    width: auto;
+    height: auto;
+    max-width: none;
+    max-height: none;
+  }
+
+  /* =========================
+     CENTER GAME AREA
+  ========================== */
+  .center {
+    flex: 1;
+    min-width: 0;
+    padding: 20px;
+    background: #fff;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Pause overlay */
+  .center.paused .pause-overlay {
+    position: absolute;
+    inset: 0;
+    background: #fff;
+    opacity: 0.9;
+    pointer-events: none;
+  }
+
+  /* =========================
+     CONTROLS
+  ========================== */
+  .controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 16px;
+    align-items: center;
+  }
+
+  .controls label,
+  .controls button,
+  .controls input,
+  .status {
+    font-size: 15px;
+    color: #000;
+  }
+
+  .controls input {
+    width: 78px;
+    padding: 8px 10px;
+    border: 1px solid #000;
+    background: #fff;
+  }
+
+  .controls button {
+    border: 1px solid #000;
+    background: #000;
+    color: #fff;
+    cursor: pointer;
+    padding: 10px 14px;
+  }
+
+  .controls button:hover {
+    background: #333;
+  }
+
+  .status {
+    min-width: 220px;
+  }
+
+  /* =========================
+     BOARD
+  ========================== */
+  .board {
+    display: grid;
+    gap: 0;
+    flex: 1;
+    width: 100%;
+    height: 100%;
+    place-items: center;
+  }
+
+  .cell {
+    aspect-ratio: 1;
+    width: 100%;
+    display: grid;
+    place-items: center;
+    border: none;
+    cursor: pointer;
+    user-select: none;
+    background: #fff;
+    color: #000;
+    min-width: 20px;
+  }
+
+  .cell:nth-child(odd) {
+    background: #fcfcfc;
+  }
+
+  .cell.open {
+    background: #fefeff;
+    font-weight: 600;
+    cursor: default;
+  }
+
+  .cell.open.mine {
+    background: #fbffff;
+  }
+
+  .cell.flagged {
+    background: #fff5ff;
+  }
+
+  .cell span {
+    pointer-events: none;
+  }
+
+  /* =========================
+     INFO AREA
+  ========================== */
+  .notice {
+    margin-top: 12px;
+    font-size: 14px;
+    min-height: 20px;
+  }
+
+  .bottom-info {
+    margin-top: 8px;
+    font-size: 14px;
+  }
+
+  /* =========================
+     MOBILE STACK
+  ========================== */
+  @media (max-width: 860px) {
     .layout {
-      display: grid;
-      grid-template-columns: auto 1fr auto;
-      gap: 0;
-      width: 100%;
-      box-sizing: border-box;
-      align-items: start;
+      flex-direction: column;
+      align-items: center;
     }
 
     .side-image {
+      width: 100%;
       display: flex;
-      align-items: flex-start;
       justify-content: center;
-      background: transparent;
     }
-
-    .side-image img {
-      display: block;
-      width: auto;
-      height: auto;
-      max-width: none;
-      max-height: none;
-      object-fit: none;
-    }
-
-    .center {
-      background: #fff;
-      padding: 20px;
-      box-shadow: none;
-      position: relative;
-      display: flex;
-      flex-direction: column;
-      height: 100%;
-      min-width: 320px;
-    }
-
-    .center.paused {
-      background: #fff;
-      color: transparent;
-    }
-
-    .center.paused * {
-      color: transparent !important;
-    }
-
-    .pause-overlay {
-      position: absolute;
-      inset: 0;
-      background: #fff;
-      pointer-events: none;
-      opacity: 0;
-      transition: opacity .2s ease;
-    }
-
-    .center.paused .pause-overlay {
-      opacity: 1;
-    }
-
-    .controls {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      margin-bottom: 16px;
-      align-items: center;
-    }
-
-    .controls label,
-    .controls button,
-    .controls input,
-    .status {
-      font-family: Arial, sans-serif;
-      font-size: 15px;
-      color: #000;
-    }
-
-    .controls input {
-      width: 78px;
-      padding: 8px 10px;
-      border: 1px solid #000;
-      font-size: 15px;
-      background: #fff;
-      color: #000;
-    }
-
-    .controls button {
-      border: 1px solid #000;
-      background: #000;
-      color: #fff;
-      cursor: pointer;
-      padding: 10px 14px;
-      transition: background .2s ease;
-    }
-
-    .controls button:hover {
-      background: #333;
-    }
-
-    .status {
-      color: #000;
-      min-width: 220px;
-    }
-
-    .board {
-      display: grid;
-      gap: 0;
-      background: transparent;
-      overflow: hidden;
-      flex: 1;
-      width: 100%;
-      height: 100%;
-      place-items: center;
-    }
-
-    .cell {
-      width: 100%;
-      aspect-ratio: 1;
-      display: grid;
-      place-items: center;
-      font-size: 14px;
-      border: none;
-      padding: 0;
-      cursor: pointer;
-      user-select: none;
-      background: #fff;
-      color: #000;
-      min-width: 24px;
-    }
-
-    .cell:nth-child(odd) {
-      background: #fcfcfc;
-    }
-
-    .cell.open {
-      background: #fefeff;
-      cursor: default;
-      color: #000;
-      font-weight: 600;
-    }
-
-    .cell.open span {
-      color: #dadada;
-    }
-
-    .cell.open.mine {
-      background: #fbffff;
-      color: #000;
-    }
-
-    .cell.flagged {
-      background: #fff5ff;
-      color: #000;
-    }
-
-    .cell.disabled {
-      cursor: not-allowed;
-      opacity: .72;
-    }
-
-    .cell span {
-      pointer-events: none;
-    }
-
-    .notice {
-      margin-top: 12px;
-      font-size: 14px;
-      min-height: 20px;
-      color: #000;
-    }
-
-    .bottom-info {
-      margin-top: 8px;
-      font-size: 14px;
-      color: #000;
-    }
-
-    .bottom-info #timerText,
-    .bottom-info #mistakesText {
-      color: #000;
-    }
-
-    @media (max-width: 860px) {
-      .layout {
-        grid-template-columns: 1fr;
-      }
-      .side-image {
-        max-width: 100%;
-      }
-    }
-  </style>
+  }
+</style>
 </head>
 <body>
   <div class="banner">
